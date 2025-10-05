@@ -1,0 +1,3 @@
+[profile.somnia-testnet]
+rpc_url = "https://dream-rpc.somnia.network/"
+chain_id = 50312
