@@ -33,6 +33,9 @@ contract AgentFactory {
      */
     function deployAgent(address operator) external returns (uint256) {
         require(operator != address(0), "Operator cannot be zero address");
+        if (agentNft.owner() != address(this)) {
+            revert("AgentFactory is not the owner of AgentNFT");
+        }
 
         uint256 agentId = agentNft.safeMint(msg.sender);
         

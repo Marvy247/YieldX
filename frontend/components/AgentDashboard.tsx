@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useAccount, useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount, useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 'wagmi';
 import { parseEther, formatEther, encodeFunctionData, Address, Hex } from 'viem';
 import { toast } from 'sonner';
 
@@ -35,7 +34,7 @@ const AGENT_FACTORY_ABI = [
   { "inputs": [{ "internalType": "address", "name": "operator", "type": "address" }], "name": "deployAgent", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "agentId", "type": "uint256" }, { "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "deposit", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "agentId", "type": "uint256" }, { "internalType": "address", "name": "target", "type": "address" }, { "internalType": "bytes", "name": "data", "type": "bytes" }], "name": "execute", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-  { "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "name": "agentIdToWallet", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
+  { "inputs": [{ "internalType": "uint256", "name": "agentId", "type": "uint256" }], "name": "agentIdToWallet", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "name": "agentIdToOwner", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "name": "agentIdToOperator", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
 ] as const;
@@ -47,8 +46,8 @@ const AGENT_NFT_ABI = [
 
 // --- Contract Addresses ---
 const DEMO_USD_ADDRESS: Address = '0xf199FFc0f226F70A0fE3475358114212772C6342';
-const AGENT_FACTORY_ADDRESS: Address = '0x51f4FaaF35a810b91B758B0968258aE852764E05';
-const AGENT_NFT_ADDRESS: Address = '0x1C766e77b378C56398842832CcBF805CE8E86c61';
+const AGENT_FACTORY_ADDRESS: Address = '0xbE838aC4968Db6905285bF260d7f0F54257d3737';
+const AGENT_NFT_ADDRESS: Address = '0x836C80c6afda7a3CAd0C9ba5Ce6368bcec3f41Bb';
 const POOL_A_ADDRESS: Address = '0xd3cCC5aB56f930249263A79C3af100C3B38ef9eF';
 const POOL_B_ADDRESS: Address = '0x54749f9F53d184D65f55dC7856cBdb7BdbD37B21';
 
@@ -56,8 +55,12 @@ const MINT_AMOUNT = parseEther('1000000'); // 1 Million DemoUSD for testing
 const DEPOSIT_AMOUNT = parseEther('10000'); // 10,000 DemoUSD to deposit into agent
 
 export function AgentDashboard() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chain } = useAccount();
   const { writeContract } = useWriteContract();
+  const publicClient = usePublicClient();
+
+  console.log("Connected Chain:", chain);
+  console.log("Public Client:", publicClient);
 
   const [ownedAgents, setOwnedAgents] = useState<bigint[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<bigint | undefined>(undefined);
@@ -69,6 +72,86 @@ export function AgentDashboard() {
   const [poolBRate, setPoolBRate] = useState<number>(0);
   const [adminPoolARate, setAdminPoolARate] = useState<string>('0');
   const [adminPoolBRate, setAdminPoolBRate] = useState<string>('0');
+
+  const [agentWalletAddressState, setAgentWalletAddressState] = useState<Address | undefined>(undefined);
+  const [agentWalletErrorState, setAgentWalletErrorState] = useState<Error | null>(null);
+  const [agentWalletLoadingState, setAgentWalletLoadingState] = useState<boolean>(false);
+
+  const [operatorAddressState, setOperatorAddressState] = useState<Address | undefined>(undefined);
+  const [operatorErrorState, setOperatorErrorState] = useState<Error | null>(null);
+  const [operatorLoadingState, setOperatorLoadingState] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchAgentWalletAddress = async () => {
+      if (!publicClient || !selectedAgentId) {
+        setAgentWalletAddressState(undefined);
+        setAgentWalletErrorState(null);
+        setAgentWalletLoadingState(false);
+        return;
+      }
+
+      setAgentWalletLoadingState(true);
+      console.log("Calling readContract with:", {
+        address: AGENT_FACTORY_ADDRESS,
+        abi: AGENT_FACTORY_ABI,
+        functionName: 'agentIdToWallet',
+        args: [selectedAgentId],
+      });
+      try {
+        const walletAddress = await publicClient.readContract({
+          address: AGENT_FACTORY_ADDRESS,
+          abi: AGENT_FACTORY_ABI,
+          functionName: 'agentIdToWallet',
+          args: [selectedAgentId],
+        });
+        setAgentWalletAddressState(walletAddress);
+        setAgentWalletErrorState(null);
+      } catch (err: any) {
+        console.error("Error fetching agent wallet address directly:", err);
+        setAgentWalletErrorState(err);
+        setAgentWalletAddressState(undefined);
+      } finally {
+        setAgentWalletLoadingState(false);
+      }
+    };
+
+    fetchAgentWalletAddress();
+    const interval = setInterval(fetchAgentWalletAddress, 5000); // Refetch every 5 seconds
+    return () => clearInterval(interval);
+  }, [publicClient, selectedAgentId]);
+
+  useEffect(() => {
+    const fetchOperatorAddress = async () => {
+      if (!publicClient || !selectedAgentId) {
+        setOperatorAddressState(undefined);
+        setOperatorErrorState(null);
+        setOperatorLoadingState(false);
+        return;
+      }
+
+      setOperatorLoadingState(true);
+      try {
+        const opAddress = await publicClient.readContract({
+          address: AGENT_FACTORY_ADDRESS,
+          abi: AGENT_FACTORY_ABI,
+          functionName: 'agentIdToOperator',
+          args: [selectedAgentId],
+        });
+        setOperatorAddressState(opAddress);
+        setOperatorErrorState(null);
+      } catch (err: any) {
+        console.error("Error fetching operator address:", err);
+        setOperatorErrorState(err);
+        setOperatorAddressState(undefined);
+      } finally {
+        setOperatorLoadingState(false);
+      }
+    };
+
+    fetchOperatorAddress();
+    const interval = setInterval(fetchOperatorAddress, 5000); // Refetch every 5 seconds
+    return () => clearInterval(interval);
+  }, [publicClient, selectedAgentId]);
 
   // --- WebSocket Log Streaming ---
   useEffect(() => {
@@ -119,25 +202,28 @@ export function AgentDashboard() {
     abi: AGENT_NFT_ABI,
     functionName: 'balanceOf',
     args: [address!],
-    query: { enabled: isConnected && !!address },
+    query: { enabled: isConnected && !!address, refetchInterval: 5000 },
   });
+  console.log("Agent Balance:", agentBalance);
 
-  const agentTokenQueries = [];
-  if (agentBalance) {
-    for (let i = 0; i < agentBalance; i++) {
-      agentTokenQueries.push({
-        address: AGENT_NFT_ADDRESS,
-        abi: AGENT_NFT_ABI,
-        functionName: 'tokenOfOwnerByIndex',
-        args: [address!, BigInt(i)],
-      });
-    }
+const agentTokenQueries = [];
+const agentBalanceNumber = Number(agentBalance ?? 0);
+if (agentBalanceNumber > 0) {
+  for (let i = 0; i < agentBalanceNumber; i++) {
+    agentTokenQueries.push({
+      address: AGENT_NFT_ADDRESS,
+      abi: AGENT_NFT_ABI,
+      functionName: 'tokenOfOwnerByIndex',
+      args: [address!, BigInt(i)],
+    });
   }
+}
 
   const { data: ownedAgentTokens } = useReadContracts({
     contracts: agentTokenQueries,
-    query: { enabled: agentBalance !== undefined && agentBalance > 0 },
+    query: { enabled: agentBalance !== undefined && agentBalance > 0, refetchInterval: 5000 },
   });
+  console.log("Owned Agent Tokens:", ownedAgentTokens);
 
   useEffect(() => {
     if (ownedAgentTokens) {
@@ -149,28 +235,20 @@ export function AgentDashboard() {
     }
   }, [ownedAgentTokens, selectedAgentId]);
 
-  const { data: agentWalletAddress } = useReadContract({
-    address: AGENT_FACTORY_ADDRESS,
-    abi: AGENT_FACTORY_ABI,
-    functionName: 'agentIdToWallet',
-    args: [selectedAgentId as bigint],
-    query: { enabled: !!selectedAgentId, refetchInterval: 5000 },
-  });
-
   const { data: agentPoolABalance } = useReadContract({
     address: POOL_A_ADDRESS,
     abi: YIELD_POOL_ABI,
     functionName: 'balanceOf',
-    args: [agentWalletAddress as Address],
-    query: { enabled: !!agentWalletAddress, refetchInterval: 5000 },
+    args: [agentWalletAddressState as Address],
+    query: { enabled: !!agentWalletAddressState, refetchInterval: 5000 },
   });
 
   const { data: agentPoolBBalance } = useReadContract({
     address: POOL_B_ADDRESS,
     abi: YIELD_POOL_ABI,
     functionName: 'balanceOf',
-    args: [agentWalletAddress as Address],
-    query: { enabled: !!agentWalletAddress, refetchInterval: 5000 },
+    args: [agentWalletAddressState as Address],
+    query: { enabled: !!agentWalletAddressState, refetchInterval: 5000 },
   });
 
   const { data: currentPoolARate } = useReadContract({
@@ -219,9 +297,8 @@ export function AgentDashboard() {
 
   const handleDeployAgent = () => {
     if (!address) { toast.error('Connect wallet first'); return; }
-    // For the demo, we'll use the connected wallet as the operator for simplicity
-    // In a real app, this would be a dedicated key for the off-chain agent
-    const opAddress = address; // Or a new generated key for the agent script
+    // Use the dedicated operator address for the agent script
+    const opAddress = '0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689'; // Address from OPERATOR_PRIVATE_KEY
     setOperatorAddress(opAddress);
 
     deployAgent({
@@ -238,7 +315,10 @@ export function AgentDashboard() {
   };
 
   const handleDepositToAgent = () => {
-    if (!address || !selectedAgentId) { toast.error('Connect wallet and select an agent first'); return; }
+    console.log("handleDepositToAgent - address:", address);
+    console.log("handleDepositToAgent - selectedAgentId:", selectedAgentId);
+    if (!address) { toast.error('Connect wallet first'); return; }
+    if (selectedAgentId === undefined || selectedAgentId === null) { toast.error('Select an agent first'); return; }
     writeContract({
       address: DEMO_USD_ADDRESS,
       abi: DEMO_USD_ABI,
@@ -381,10 +461,10 @@ export function AgentDashboard() {
                 <>
                   <div className="space-y-2 mb-4">
                     <p className="text-sm"><strong>Agent ID:</strong> <span className="font-mono">{selectedAgentId.toString()}</span></p>
-                    <p className="text-sm"><strong>Agent Wallet:</strong> <span className="font-mono">{agentWalletAddress?.slice(0,6)}...{agentWalletAddress?.slice(-4)}</span></p>
-                    <p className="text-sm"><strong>Operator:</strong> <span className="font-mono">{operatorAddress?.slice(0,6)}...{operatorAddress?.slice(-4)}</span></p>
-                    <p className="text-sm"><strong>Funds in Pool A:</strong> {agentPoolABalance !== undefined ? formatEther(agentPoolABalance) : 'Loading...'} DUSD</p>
-                    <p className="text-sm"><strong>Funds in Pool B:</strong> {agentPoolBBalance !== undefined ? formatEther(agentPoolBBalance) : 'Loading...'} DUSD</p>
+                    <p className="text-sm"><strong>Agent Wallet:</strong> {agentWalletLoadingState ? 'Loading...' : agentWalletAddressState ? <span className="font-mono">{agentWalletAddressState.slice(0,6)}...{agentWalletAddressState.slice(-4)}</span> : 'Not available'}</p>
+                    <p className="text-sm"><strong>Operator:</strong> {operatorLoadingState ? 'Loading...' : operatorAddressState ? <span className="font-mono">{operatorAddressState.slice(0,6)}...{operatorAddressState.slice(-4)}</span> : 'Not available'}</p>
+                    <p className="text-sm"><strong>Funds in Pool A:</strong> {agentWalletAddressState ? (agentPoolABalance !== undefined ? formatEther(agentPoolABalance) : 'Loading...') : 'No agent selected'} DUSD</p>
+                    <p className="text-sm"><strong>Funds in Pool B:</strong> {agentWalletAddressState ? (agentPoolBBalance !== undefined ? formatEther(agentPoolBBalance) : 'Loading...') : 'No agent selected'} DUSD</p>
                   </div>
                   <Button onClick={handleDepositToAgent} className="w-full bg-blue-600 hover:bg-blue-700">
                     <TrendingUp className="h-4 w-4 mr-1" />
