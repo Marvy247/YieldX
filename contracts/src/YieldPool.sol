@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+import "./AgentFactory.sol";
 
 /**
  * @title YieldPool
@@ -14,6 +15,7 @@ import "@openzeppelin/contracts/utils/Context.sol";
  */
 contract YieldPool is Ownable {
     IERC20 public immutable stakingToken;
+    AgentFactory public immutable agentFactory;
     uint256 public rewardRate;
 
     mapping(address => uint256) public balanceOf;
@@ -23,8 +25,9 @@ contract YieldPool is Ownable {
     event Withdrawn(address indexed user, uint256 amount);
     event RewardRateChanged(uint256 newRate);
 
-    constructor(address _stakingTokenAddress, address initialOwner) Ownable(initialOwner) {
+    constructor(address _stakingTokenAddress, address initialOwner, address _agentFactory) Ownable(initialOwner) {
         stakingToken = IERC20(_stakingTokenAddress);
+        agentFactory = AgentFactory(_agentFactory);
     }
 
     /**
@@ -56,6 +59,18 @@ contract YieldPool is Ownable {
      * Only the owner can call this function.
      */
     function setRewardRate(uint256 newRate) external onlyOwner {
+        rewardRate = newRate;
+        emit RewardRateChanged(newRate);
+    }
+
+    /**
+     * @dev Allows the agent owner to set the reward rate even if ownership has been transferred to the agent.
+     * @param agentId The ID of the agent that owns the pool.
+     * @param newRate The new reward rate to set.
+     */
+    function setRewardRateByAgentOwner(uint256 agentId, uint256 newRate) external {
+        require(owner() == agentFactory.agentIdToWallet(agentId), "Pool not owned by agent");
+        require(msg.sender == agentFactory.agentIdToOwner(agentId), "Only agent owner can set rate");
         rewardRate = newRate;
         emit RewardRateChanged(newRate);
     }

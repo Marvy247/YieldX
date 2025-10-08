@@ -24,9 +24,9 @@ contract AgentFlowTest is Test {
         // Deploy Contracts
         demoUsd = new DemoUSD(address(this));
         agentNft = new AgentNFT(address(this));
-        poolA = new YieldPool(address(demoUsd), address(this));
-        poolB = new YieldPool(address(demoUsd), address(this));
         agentFactory = new AgentFactory(address(agentNft), address(demoUsd));
+        poolA = new YieldPool(address(demoUsd), address(this), address(agentFactory));
+        poolB = new YieldPool(address(demoUsd), address(this), address(agentFactory));
 
         // Transfer NFT ownership to the factory
         agentNft.transferOwnership(address(agentFactory));
@@ -120,5 +120,15 @@ contract AgentFlowTest is Test {
         assertEq(poolA.balanceOf(agentWalletAddress), 0);
         assertEq(poolB.balanceOf(agentWalletAddress), INITIAL_MINT_AMOUNT);
         assertEq(demoUsd.balanceOf(agentWalletAddress), 0);
+
+        // 6. Transfer ownership of Pool A to the agent
+        vm.prank(address(this)); // test contract owns poolA
+        poolA.transferOwnership(agentWalletAddress);
+
+        // 7. User sets reward rate via new function
+        vm.prank(user);
+        poolA.setRewardRateByAgentOwner(agentId, 500); // 5% APY or whatever
+
+        assertEq(poolA.rewardRate(), 500);
     }
 }

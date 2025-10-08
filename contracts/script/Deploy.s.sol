@@ -20,12 +20,12 @@ contract Deploy is Script {
         // 2. Deploy the AgentNFT contract, with the deployer as the initial owner
         AgentNFT agentNft = new AgentNFT(deployer);
 
-        // 3. Deploy two YieldPools for the agent to switch between
-        YieldPool poolA = new YieldPool(address(demoUsd), deployer);
-        YieldPool poolB = new YieldPool(address(demoUsd), deployer);
-
-        // 4. Deploy the AgentFactory, linking the AgentNFT and DemoUSD contracts
+        // 3. Deploy the AgentFactory, linking the AgentNFT and DemoUSD contracts
         AgentFactory agentFactory = new AgentFactory(address(agentNft), address(demoUsd));
+
+        // 4. Deploy two YieldPools for the agent to switch between
+        YieldPool poolA = new YieldPool(address(demoUsd), deployer, address(agentFactory));
+        YieldPool poolB = new YieldPool(address(demoUsd), deployer, address(agentFactory));
 
         // 5. Transfer ownership of the AgentNFT contract to the AgentFactory
         // This is a crucial step, allowing the factory to mint new agent NFTs.

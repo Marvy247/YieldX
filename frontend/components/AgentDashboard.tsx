@@ -24,10 +24,12 @@ const DEMO_USD_ABI = [
 
 const YIELD_POOL_ABI = [
   { "inputs": [], "name": "rewardRate", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+  { "inputs": [], "name": "owner", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "deposit", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "withdraw", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "newRate", "type": "uint256" }], "name": "setRewardRate", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+  { "inputs": [{ "internalType": "uint256", "name": "agentId", "type": "uint256" }, { "internalType": "uint256", "name": "newRate", "type": "uint256" }], "name": "setRewardRateByAgentOwner", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
 ] as const;
 
 const AGENT_FACTORY_ABI = [
@@ -45,11 +47,11 @@ const AGENT_NFT_ABI = [
 ] as const;
 
 // --- Contract Addresses ---
-const DEMO_USD_ADDRESS: Address = '0xf199FFc0f226F70A0fE3475358114212772C6342';
-const AGENT_FACTORY_ADDRESS: Address = '0xbE838aC4968Db6905285bF260d7f0F54257d3737';
-const AGENT_NFT_ADDRESS: Address = '0x836C80c6afda7a3CAd0C9ba5Ce6368bcec3f41Bb';
-const POOL_A_ADDRESS: Address = '0xd3cCC5aB56f930249263A79C3af100C3B38ef9eF';
-const POOL_B_ADDRESS: Address = '0x54749f9F53d184D65f55dC7856cBdb7BdbD37B21';
+const DEMO_USD_ADDRESS: Address = '0xd078eb70856507EaaC7bf8d31c36733E2a386228';
+const AGENT_FACTORY_ADDRESS: Address = '0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0';
+const AGENT_NFT_ADDRESS: Address = '0x37A41566551e76849CB29D0f3a4F713106A92622';
+const POOL_A_ADDRESS: Address = '0x4fEB2e0222a3704043fCEe6C335ce04E330ceC27';
+const POOL_B_ADDRESS: Address = '0xCd051eFaE35c99159564A33ec421B346C7fB2976';
 
 const MINT_AMOUNT = parseEther('1000000'); // 1 Million DemoUSD for testing
 const DEPOSIT_AMOUNT = parseEther('10000'); // 10,000 DemoUSD to deposit into agent
@@ -83,7 +85,7 @@ export function AgentDashboard() {
 
   useEffect(() => {
     const fetchAgentWalletAddress = async () => {
-      if (!publicClient || !selectedAgentId) {
+      if (!publicClient || selectedAgentId === undefined || selectedAgentId === null) {
         setAgentWalletAddressState(undefined);
         setAgentWalletErrorState(null);
         setAgentWalletLoadingState(false);
@@ -122,7 +124,7 @@ export function AgentDashboard() {
 
   useEffect(() => {
     const fetchOperatorAddress = async () => {
-      if (!publicClient || !selectedAgentId) {
+      if (!publicClient || selectedAgentId === undefined || selectedAgentId === null) {
         setOperatorAddressState(undefined);
         setOperatorErrorState(null);
         setOperatorLoadingState(false);
@@ -265,6 +267,20 @@ if (agentBalanceNumber > 0) {
     query: { refetchInterval: 5000 },
   });
 
+  const { data: poolAOwner } = useReadContract({
+    address: POOL_A_ADDRESS,
+    abi: YIELD_POOL_ABI,
+    functionName: 'owner',
+    query: { refetchInterval: 5000 },
+  });
+
+  const { data: poolBOwner } = useReadContract({
+    address: POOL_B_ADDRESS,
+    abi: YIELD_POOL_ABI,
+    functionName: 'owner',
+    query: { refetchInterval: 5000 },
+  });
+
   useEffect(() => {
     if (currentPoolARate !== undefined) setPoolARate(Number(currentPoolARate));
     if (currentPoolBRate !== undefined) setPoolBRate(Number(currentPoolBRate));
@@ -344,23 +360,43 @@ if (agentBalanceNumber > 0) {
 
   const handleSetPoolARate = () => {
     if (!address) { toast.error('Connect wallet first'); return; }
-    writeContract({
-      address: POOL_A_ADDRESS,
-      abi: YIELD_POOL_ABI,
-      functionName: 'setRewardRate',
-      args: [BigInt(adminPoolARate)],
-    });
+    const isOwnedByAgent = poolAOwner === agentWalletAddressState && selectedAgentId !== undefined;
+    if (isOwnedByAgent) {
+      writeContract({
+        address: POOL_A_ADDRESS,
+        abi: YIELD_POOL_ABI,
+        functionName: 'setRewardRateByAgentOwner',
+        args: [selectedAgentId!, BigInt(adminPoolARate)],
+      });
+    } else {
+      writeContract({
+        address: POOL_A_ADDRESS,
+        abi: YIELD_POOL_ABI,
+        functionName: 'setRewardRate',
+        args: [BigInt(adminPoolARate)],
+      });
+    }
     toast.success(`Setting Pool A rate to ${adminPoolARate}...`);
   };
 
   const handleSetPoolBRate = () => {
     if (!address) { toast.error('Connect wallet first'); return; }
-    writeContract({
-      address: POOL_B_ADDRESS,
-      abi: YIELD_POOL_ABI,
-      functionName: 'setRewardRate',
-      args: [BigInt(adminPoolBRate)],
-    });
+    const isOwnedByAgent = poolBOwner === agentWalletAddressState && selectedAgentId !== undefined;
+    if (isOwnedByAgent) {
+      writeContract({
+        address: POOL_B_ADDRESS,
+        abi: YIELD_POOL_ABI,
+        functionName: 'setRewardRateByAgentOwner',
+        args: [selectedAgentId!, BigInt(adminPoolBRate)],
+      });
+    } else {
+      writeContract({
+        address: POOL_B_ADDRESS,
+        abi: YIELD_POOL_ABI,
+        functionName: 'setRewardRate',
+        args: [BigInt(adminPoolBRate)],
+      });
+    }
     toast.success(`Setting Pool B rate to ${adminPoolBRate}...`);
   };
 
@@ -461,8 +497,8 @@ if (agentBalanceNumber > 0) {
                 <>
                   <div className="space-y-2 mb-4">
                     <p className="text-sm"><strong>Agent ID:</strong> <span className="font-mono">{selectedAgentId.toString()}</span></p>
-                    <p className="text-sm"><strong>Agent Wallet:</strong> {agentWalletLoadingState ? 'Loading...' : agentWalletAddressState ? <span className="font-mono">{agentWalletAddressState.slice(0,6)}...{agentWalletAddressState.slice(-4)}</span> : 'Not available'}</p>
-                    <p className="text-sm"><strong>Operator:</strong> {operatorLoadingState ? 'Loading...' : operatorAddressState ? <span className="font-mono">{operatorAddressState.slice(0,6)}...{operatorAddressState.slice(-4)}</span> : 'Not available'}</p>
+                    <p className="text-sm"><strong>Agent Wallet:</strong> {agentWalletLoadingState ? 'Loading...' : (agentWalletAddressState && agentWalletAddressState !== '0x0000000000000000000000000000000000000000') ? <span className="font-mono">{agentWalletAddressState.slice(0,6)}...{agentWalletAddressState.slice(-4)}</span> : 'Not available'}</p>
+                    <p className="text-sm"><strong>Operator:</strong> {operatorLoadingState ? 'Loading...' : (operatorAddressState && operatorAddressState !== '0x0000000000000000000000000000000000000000') ? <span className="font-mono">{operatorAddressState.slice(0,6)}...{operatorAddressState.slice(-4)}</span> : 'Not available'}</p>
                     <p className="text-sm"><strong>Funds in Pool A:</strong> {agentWalletAddressState ? (agentPoolABalance !== undefined ? formatEther(agentPoolABalance) : 'Loading...') : 'No agent selected'} DUSD</p>
                     <p className="text-sm"><strong>Funds in Pool B:</strong> {agentWalletAddressState ? (agentPoolBBalance !== undefined ? formatEther(agentPoolBBalance) : 'Loading...') : 'No agent selected'} DUSD</p>
                   </div>
