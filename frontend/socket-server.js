@@ -74,15 +74,21 @@ function broadcast(message) {
   });
 }
 
+const rateChangeQueue = [];
+let isProcessingQueue = false;
+
 let isHandlingRateChange = false;
 
 // Handle rate change
 async function handleRateChange() {
+  console.log('Entering handleRateChange');
   if (isHandlingRateChange) {
     broadcast('Already handling a rate change, skipping...');
+    console.log('Exiting handleRateChange (already handling)');
     return;
   }
   isHandlingRateChange = true;
+  console.log('Lock acquired');
   try {
     // Get current rates
     const rateA = await publicClient.readContract({
@@ -146,6 +152,7 @@ async function handleRateChange() {
     });
 
     broadcast(`Agent wallet balance: ${walletBalance} DUSD, Pool A: ${balanceA} DUSD, Pool B: ${balanceB} DUSD`);
+    broadcast(`Agent balance in Pool A: ${agentBalanceA} DUSD, Agent balance in Pool B: ${agentBalanceB} DUSD`);
 
     // Decide which pool to move to
     let targetPool, amount;
@@ -170,12 +177,13 @@ async function handleRateChange() {
           functionName: 'approve',
           args: [targetPool, walletBalance],
         });
-        await walletClient.writeContract({
+        const approveHash = await walletClient.writeContract({
           address: AGENT_FACTORY_ADDRESS,
           abi: AGENT_FACTORY_ABI,
           functionName: 'execute',
           args: [agentId, DEMO_USD_ADDRESS, approveData],
         });
+        await publicClient.waitForTransactionReceipt({ hash: approveHash });
         broadcast(`Approved ${walletBalance} DUSD for Pool ${poolName}`);
 
         const depositData = encodeFunctionData({
@@ -183,12 +191,13 @@ async function handleRateChange() {
           functionName: 'deposit',
           args: [walletBalance],
         });
-        await walletClient.writeContract({
+        const depositHash = await walletClient.writeContract({
           address: AGENT_FACTORY_ADDRESS,
           abi: AGENT_FACTORY_ABI,
           functionName: 'execute',
           args: [agentId, targetPool, depositData],
         });
+        await publicClient.waitForTransactionReceipt({ hash: depositHash });
         broadcast(`Deposited ${walletBalance} DUSD to Pool ${poolName}`);
       } catch (error) {
         broadcast(`Failed to deposit wallet balance: ${error.message}`);
@@ -196,49 +205,52 @@ async function handleRateChange() {
     }
 
     // Withdraw from the other pool if any
-    try {
-      if (agentBalanceA > 0n && targetPool !== POOL_A_ADDRESS) {
-        const withdrawData = encodeFunctionData({
-          abi: YIELD_POOL_ABI,
-          functionName: 'withdraw',
-          args: [agentBalanceA],
-        });
-        await walletClient.writeContract({
-          address: AGENT_FACTORY_ADDRESS,
-          abi: AGENT_FACTORY_ABI,
-          functionName: 'execute',
-          args: [agentId, POOL_A_ADDRESS, withdrawData],
-        });
-        broadcast(`Withdrew ${agentBalanceA} DUSD from Pool A`);
+      try {
+        if (agentBalanceA > 0n && targetPool !== POOL_A_ADDRESS) {
+          const withdrawData = encodeFunctionData({
+            abi: YIELD_POOL_ABI,
+            functionName: 'withdraw',
+            args: [agentBalanceA],
+          });
+          const withdrawHash = await walletClient.writeContract({
+            address: AGENT_FACTORY_ADDRESS,
+            abi: AGENT_FACTORY_ABI,
+            functionName: 'execute',
+            args: [agentId, POOL_A_ADDRESS, withdrawData],
+          });
+          await publicClient.waitForTransactionReceipt({ hash: withdrawHash });
+          broadcast(`Withdrew ${agentBalanceA} DUSD from Pool A`);
 
-        // Approve target pool to spend the withdrawn funds
-        const approveData = encodeFunctionData({
-          abi: DEMO_USD_ABI,
-          functionName: 'approve',
-          args: [targetPool, agentBalanceA],
-        });
-        await walletClient.writeContract({
-          address: AGENT_FACTORY_ADDRESS,
-          abi: AGENT_FACTORY_ABI,
-          functionName: 'execute',
-          args: [agentId, DEMO_USD_ADDRESS, approveData],
-        });
-        broadcast(`Approved ${agentBalanceA} DUSD for Pool ${poolName}`);
+          // Approve target pool to spend the withdrawn funds
+          const approveData = encodeFunctionData({
+            abi: DEMO_USD_ABI,
+            functionName: 'approve',
+            args: [targetPool, agentBalanceA],
+          });
+          const approveHash = await walletClient.writeContract({
+            address: AGENT_FACTORY_ADDRESS,
+            abi: AGENT_FACTORY_ABI,
+            functionName: 'execute',
+            args: [agentId, DEMO_USD_ADDRESS, approveData],
+          });
+          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+          broadcast(`Approved ${agentBalanceA} DUSD for Pool ${poolName}`);
 
-        // Deposit to target pool
-        const depositData = encodeFunctionData({
-          abi: YIELD_POOL_ABI,
-          functionName: 'deposit',
-          args: [agentBalanceA],
-        });
-        await walletClient.writeContract({
-          address: AGENT_FACTORY_ADDRESS,
-          abi: AGENT_FACTORY_ABI,
-          functionName: 'execute',
-          args: [agentId, targetPool, depositData],
-        });
-        broadcast(`Deposited ${agentBalanceA} DUSD to Pool ${poolName}`);
-      }
+          // Deposit to target pool
+          const depositData = encodeFunctionData({
+            abi: YIELD_POOL_ABI,
+            functionName: 'deposit',
+            args: [agentBalanceA],
+          });
+          const depositHash = await walletClient.writeContract({
+            address: AGENT_FACTORY_ADDRESS,
+            abi: AGENT_FACTORY_ABI,
+            functionName: 'execute',
+            args: [agentId, targetPool, depositData],
+          });
+          await publicClient.waitForTransactionReceipt({ hash: depositHash });
+          broadcast(`Deposited ${agentBalanceA} DUSD to Pool ${poolName}`);
+        }
 
       if (agentBalanceB > 0n && targetPool !== POOL_B_ADDRESS) {
         const withdrawData = encodeFunctionData({
@@ -246,12 +258,13 @@ async function handleRateChange() {
           functionName: 'withdraw',
           args: [agentBalanceB],
         });
-        await walletClient.writeContract({
+        const withdrawHash = await walletClient.writeContract({
           address: AGENT_FACTORY_ADDRESS,
           abi: AGENT_FACTORY_ABI,
           functionName: 'execute',
           args: [agentId, POOL_B_ADDRESS, withdrawData],
         });
+        await publicClient.waitForTransactionReceipt({ hash: withdrawHash });
         broadcast(`Withdrew ${agentBalanceB} DUSD from Pool B`);
 
         // Approve target pool to spend the withdrawn funds
@@ -260,12 +273,13 @@ async function handleRateChange() {
           functionName: 'approve',
           args: [targetPool, agentBalanceB],
         });
-        await walletClient.writeContract({
+        const approveHash = await walletClient.writeContract({
           address: AGENT_FACTORY_ADDRESS,
           abi: AGENT_FACTORY_ABI,
           functionName: 'execute',
           args: [agentId, DEMO_USD_ADDRESS, approveData],
         });
+        await publicClient.waitForTransactionReceipt({ hash: approveHash });
         broadcast(`Approved ${agentBalanceB} DUSD for Pool ${poolName}`);
 
         // Deposit to target pool
@@ -274,12 +288,13 @@ async function handleRateChange() {
           functionName: 'deposit',
           args: [agentBalanceB],
         });
-        await walletClient.writeContract({
+        const depositHash = await walletClient.writeContract({
           address: AGENT_FACTORY_ADDRESS,
           abi: AGENT_FACTORY_ABI,
           functionName: 'execute',
           args: [agentId, targetPool, depositData],
         });
+        await publicClient.waitForTransactionReceipt({ hash: depositHash });
         broadcast(`Deposited ${agentBalanceB} DUSD to Pool ${poolName}`);
       }
     } catch (error) {
@@ -290,6 +305,7 @@ async function handleRateChange() {
     broadcast('Error handling rate change: ' + error.message);
   } finally {
     isHandlingRateChange = false;
+    console.log('Lock released');
   }
 }
 
@@ -354,7 +370,7 @@ setInterval(async () => {
   } catch (error) {
     console.error('Error polling:', error);
   }
-}, 5000); // Poll every 5 seconds
+}, 15000); // Poll every 15 seconds
 
 // Event-driven agent automation for real-time responsiveness.
 
@@ -379,40 +395,40 @@ wss.on('connection', function connection(ws) {
 });
 
 // Watch for rate changes on Pool A
-watchContractEvent(publicClient, {
-  address: POOL_A_ADDRESS,
-  abi: YIELD_POOL_ABI,
-  eventName: 'RewardRateChanged',
-  onLogs: (logs) => {
-    console.log('Pool A rate changed');
-    broadcast('Pool A rate changed');
-    handleRateChange();
-  }
-});
+// watchContractEvent(publicClient, {
+//   address: POOL_A_ADDRESS,
+//   abi: YIELD_POOL_ABI,
+//   eventName: 'RewardRateChanged',
+//   onLogs: (logs) => {
+//     console.log('Pool A rate changed');
+//     broadcast('Pool A rate changed');
+//     handleRateChange();
+//   }
+// });
 
-// Watch for rate changes on Pool B
-watchContractEvent(publicClient, {
-  address: POOL_B_ADDRESS,
-  abi: YIELD_POOL_ABI,
-  eventName: 'RewardRateChanged',
-  onLogs: (logs) => {
-    console.log('Pool B rate changed');
-    broadcast('Pool B rate changed');
-    handleRateChange();
-  }
-});
+// // Watch for rate changes on Pool B
+// watchContractEvent(publicClient, {
+//   address: POOL_B_ADDRESS,
+//   abi: YIELD_POOL_ABI,
+//   eventName: 'RewardRateChanged',
+//   onLogs: (logs) => {
+//     console.log('Pool B rate changed');
+//     broadcast('Pool B rate changed');
+//     handleRateChange();
+//   }
+// });
 
-// Watch for deposits to agent
-watchContractEvent(publicClient, {
-  address: AGENT_FACTORY_ADDRESS,
-  abi: AGENT_FACTORY_ABI,
-  eventName: 'Deposit',
-  onLogs: (logs) => {
-    const agentId = logs[0].args.agentId;
-    if (agentId === 0n) {
-      console.log('Deposit to agent 0');
-      broadcast('Deposit to agent 0');
-      handleRateChange();
-    }
-  }
-});
+// // Watch for deposits to agent
+// watchContractEvent(publicClient, {
+//   address: AGENT_FACTORY_ADDRESS,
+//   abi: AGENT_FACTORY_ABI,
+//   eventName: 'Deposit',
+//   onLogs: (logs) => {
+//     const agentId = logs[0].args.agentId;
+//     if (agentId === 0n) {
+//       console.log('Deposit to agent 0');
+//       broadcast('Deposit to agent 0');
+//       handleRateChange();
+//     }
+//   }
+// });
