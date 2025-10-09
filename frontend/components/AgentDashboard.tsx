@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAccount, useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 'wagmi';
-import { parseEther, formatEther, encodeFunctionData, Address, Hex } from 'viem';
+import { parseEther, formatEther, Address } from 'viem';
 import { toast } from 'sonner';
 
 // Lucide React icons
-import { Wallet, Bot, Activity, TrendingUp, Settings, Zap, Shield, BarChart3, Terminal, CheckCircle, AlertCircle } from 'lucide-react';
+import { Wallet, Bot, TrendingUp, Settings, Zap, Shield, BarChart3, Terminal, CheckCircle, AlertCircle } from 'lucide-react';
 
 // shadcn/ui components
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ const YIELD_POOL_ABI = [
   { "inputs": [{ "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "withdraw", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "newRate", "type": "uint256" }], "name": "setRewardRate", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "agentId", "type": "uint256" }, { "internalType": "uint256", "name": "newRate", "type": "uint256" }], "name": "setRewardRateByAgentOwner", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+  { "inputs": [], "name": "totalSupply", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
 ] as const;
 
 const AGENT_FACTORY_ABI = [
@@ -47,11 +48,11 @@ const AGENT_NFT_ABI = [
 ] as const;
 
 // --- Contract Addresses ---
-const DEMO_USD_ADDRESS: Address = '0xd078eb70856507EaaC7bf8d31c36733E2a386228';
-const AGENT_FACTORY_ADDRESS: Address = '0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0';
-const AGENT_NFT_ADDRESS: Address = '0x37A41566551e76849CB29D0f3a4F713106A92622';
-const POOL_A_ADDRESS: Address = '0x4fEB2e0222a3704043fCEe6C335ce04E330ceC27';
-const POOL_B_ADDRESS: Address = '0xCd051eFaE35c99159564A33ec421B346C7fB2976';
+const DEMO_USD_ADDRESS: Address = '0x631Bf62BfF979205Eee2F73D3d63c5F495Ae67De';
+const AGENT_FACTORY_ADDRESS: Address = '0xAb17b786eB7Ea92619Ac5E460e1270D58d810a75';
+const AGENT_NFT_ADDRESS: Address = '0x95f356B5078afa297b09CDA22B083D639d740cF3';
+const POOL_A_ADDRESS: Address = '0x573a6BDD3e683dFE93e43eCaA6B6195aB17FF23d';
+const POOL_B_ADDRESS: Address = '0xadd17D61eC1dEf193e3f547bDf85e18feB98869f';
 
 const MINT_AMOUNT = parseEther('1000000'); // 1 Million DemoUSD for testing
 const DEPOSIT_AMOUNT = parseEther('10000'); // 10,000 DemoUSD to deposit into agent
@@ -69,25 +70,24 @@ export function AgentDashboard() {
   const [logs, setLogs] = useState<string[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  const [operatorAddress, setOperatorAddress] = useState<Address | undefined>(undefined); // For the off-chain agent script
   const [poolARate, setPoolARate] = useState<number>(0);
   const [poolBRate, setPoolBRate] = useState<number>(0);
   const [adminPoolARate, setAdminPoolARate] = useState<string>('0');
   const [adminPoolBRate, setAdminPoolBRate] = useState<string>('0');
 
   const [agentWalletAddressState, setAgentWalletAddressState] = useState<Address | undefined>(undefined);
-  const [agentWalletErrorState, setAgentWalletErrorState] = useState<Error | null>(null);
   const [agentWalletLoadingState, setAgentWalletLoadingState] = useState<boolean>(false);
 
   const [operatorAddressState, setOperatorAddressState] = useState<Address | undefined>(undefined);
-  const [operatorErrorState, setOperatorErrorState] = useState<Error | null>(null);
   const [operatorLoadingState, setOperatorLoadingState] = useState<boolean>(false);
+
+  const [selectedPool, setSelectedPool] = useState<`0x${string}`>(POOL_A_ADDRESS);
+  const [depositAmount, setDepositAmount] = useState<string>('');
 
   useEffect(() => {
     const fetchAgentWalletAddress = async () => {
       if (!publicClient || selectedAgentId === undefined || selectedAgentId === null) {
         setAgentWalletAddressState(undefined);
-        setAgentWalletErrorState(null);
         setAgentWalletLoadingState(false);
         return;
       }
@@ -107,10 +107,8 @@ export function AgentDashboard() {
           args: [selectedAgentId],
         });
         setAgentWalletAddressState(walletAddress);
-        setAgentWalletErrorState(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error fetching agent wallet address directly:", err);
-        setAgentWalletErrorState(err);
         setAgentWalletAddressState(undefined);
       } finally {
         setAgentWalletLoadingState(false);
@@ -126,7 +124,6 @@ export function AgentDashboard() {
     const fetchOperatorAddress = async () => {
       if (!publicClient || selectedAgentId === undefined || selectedAgentId === null) {
         setOperatorAddressState(undefined);
-        setOperatorErrorState(null);
         setOperatorLoadingState(false);
         return;
       }
@@ -140,10 +137,8 @@ export function AgentDashboard() {
           args: [selectedAgentId],
         });
         setOperatorAddressState(opAddress);
-        setOperatorErrorState(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error fetching operator address:", err);
-        setOperatorErrorState(err);
         setOperatorAddressState(undefined);
       } finally {
         setOperatorLoadingState(false);
@@ -240,16 +235,14 @@ if (agentBalanceNumber > 0) {
   const { data: agentPoolABalance } = useReadContract({
     address: POOL_A_ADDRESS,
     abi: YIELD_POOL_ABI,
-    functionName: 'balanceOf',
-    args: [agentWalletAddressState as Address],
+    functionName: 'totalSupply',
     query: { enabled: !!agentWalletAddressState, refetchInterval: 5000 },
   });
 
   const { data: agentPoolBBalance } = useReadContract({
     address: POOL_B_ADDRESS,
     abi: YIELD_POOL_ABI,
-    functionName: 'balanceOf',
-    args: [agentWalletAddressState as Address],
+    functionName: 'totalSupply',
     query: { enabled: !!agentWalletAddressState, refetchInterval: 5000 },
   });
 
@@ -315,7 +308,6 @@ if (agentBalanceNumber > 0) {
     if (!address) { toast.error('Connect wallet first'); return; }
     // Use the dedicated operator address for the agent script
     const opAddress = '0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689'; // Address from OPERATOR_PRIVATE_KEY
-    setOperatorAddress(opAddress);
 
     deployAgent({
       address: AGENT_FACTORY_ADDRESS,
@@ -398,6 +390,39 @@ if (agentBalanceNumber > 0) {
       });
     }
     toast.success(`Setting Pool B rate to ${adminPoolBRate}...`);
+  };
+
+  const handleAddFundsToPool = () => {
+    if (!address) {
+      toast.error('Connect wallet first');
+      return;
+    }
+    if (!depositAmount || isNaN(Number(depositAmount)) || Number(depositAmount) <= 0) {
+      toast.error('Enter a valid deposit amount');
+      return;
+    }
+    const amount = parseEther(depositAmount);
+    writeContract({
+      address: DEMO_USD_ADDRESS,
+      abi: DEMO_USD_ABI,
+      functionName: 'approve',
+      args: [selectedPool, amount],
+    }, {
+      onSuccess: (hash) => {
+        toast.success(`Approving pool... Tx: ${hash}`);
+        // After approval, deposit
+        writeContract({
+          address: selectedPool as Address,
+          abi: YIELD_POOL_ABI,
+          functionName: 'deposit',
+          args: [amount],
+        }, {
+          onSuccess: (hash) => toast.success(`Depositing to pool... Tx: ${hash}`),
+          onError: (error) => toast.error(`Deposit failed: ${error.message}`),
+        });
+      },
+      onError: (error) => toast.error(`Approval failed: ${error.message}`),
+    });
   };
 
   // --- Render UI ---
@@ -509,6 +534,44 @@ if (agentBalanceNumber > 0) {
                   <p className="mt-4 text-xs text-muted-foreground">*Agent will automatically move funds based on yield.</p>
                 </>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Add Funds to Pool Section */}
+          <Card className="lg:col-span-1 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-900/20 border-yellow-200 dark:border-yellow-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Zap className="h-5 w-5 text-yellow-600" />
+                <span>Add Funds to Pool</span>
+              </CardTitle>
+              <CardDescription>Deposit DemoUSD tokens directly to Pool A or Pool B.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <Label htmlFor="pool-select">Select Pool</Label>
+                <select
+                  id="pool-select"
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-yellow-500"
+                  value={selectedPool}
+                  onChange={(e) => setSelectedPool(e.target.value as `0x${string}`)}
+                >
+                  <option value={POOL_A_ADDRESS}>Pool A</option>
+                  <option value={POOL_B_ADDRESS}>Pool B</option>
+                </select>
+              </div>
+              <div className="mb-4">
+                <Label htmlFor="deposit-amount">Amount (DUSD)</Label>
+                <Input
+                  type="number"
+                  id="deposit-amount"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  placeholder="Enter amount to deposit"
+                />
+              </div>
+              <Button onClick={handleAddFundsToPool} className="w-full bg-yellow-600 hover:bg-yellow-700">
+                Deposit to Pool
+              </Button>
             </CardContent>
           </Card>
 

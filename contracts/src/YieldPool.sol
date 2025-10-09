@@ -32,12 +32,13 @@ contract YieldPool is Ownable {
 
     /**
      * @dev Deposits the staking token into the pool.
+     * Assumes the tokens have been transferred to the pool already.
      */
     function deposit(uint256 amount) external {
         require(amount > 0, "Deposit amount must be greater than 0");
         balanceOf[_msgSender()] += amount;
         totalSupply += amount;
-        stakingToken.transferFrom(_msgSender(), address(this), amount);
+        // stakingToken.transferFrom(_msgSender(), address(this), amount);
         emit Deposited(_msgSender(), amount);
     }
 

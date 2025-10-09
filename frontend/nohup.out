@@ -1,0 +1,232 @@
+WebSocket server started on port 8080
+Pool A rate changed to 10%
+Current rates: A: 10%, B: 5%
+Error in handleRateChange: ContractFunctionExecutionError: The contract function "execute" reverted with the following reason:
+Execution failed
+
+Contract Call:
+  address:   0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0
+  function:  execute(uint256 agentId, address target, bytes data)
+  args:             (0, 0x6937a33103C17464d47FF9d37A726b08C354bbBd, 0xb61d27f6000000000000000000000000d078eb70856507eaac7bf8d31c36733e2a386228000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b30000000000000000000000004feb2e0222a3704043fcee6c335ce04e330cec2700000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000)
+  sender:    0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689
+
+Docs: https://viem.sh/docs/contract/writeContract
+Version: viem@2.37.9
+    at getContractError (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/utils/errors/getContractError.js:30:12)
+    at writeContract (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/actions/wallet/writeContract.js:78:15)
+    ... 2 lines matching cause stack trace ...
+    at async Timeout._onTimeout (file:///home/marvi/Documents/somniaAI/frontend/socket-server.js:269:7) {
+  cause: ContractFunctionRevertedError: The contract function "execute" reverted with the following reason:
+  Execution failed
+  
+  Version: viem@2.37.9
+      at file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/utils/errors/getContractError.js:19:20
+      at getContractError (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/utils/errors/getContractError.js:29:7)
+      at writeContract (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/actions/wallet/writeContract.js:78:15)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async handleRateChange (file:///home/marvi/Documents/somniaAI/frontend/socket-server.js:195:7)
+      at async Timeout._onTimeout (file:///home/marvi/Documents/somniaAI/frontend/socket-server.js:269:7) {
+    details: undefined,
+    docsPath: undefined,
+    metaMessages: undefined,
+    shortMessage: 'The contract function "execute" reverted with the following reason:\n' +
+      'Execution failed',
+    version: '2.37.9',
+    data: { abiItem: [Object], args: [Array], errorName: 'Error' },
+    raw: '0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010457865637574696f6e206661696c656400000000000000000000000000000000',
+    reason: 'Execution failed',
+    signature: undefined
+  },
+  details: undefined,
+  docsPath: '/docs/contract/writeContract',
+  metaMessages: [
+    'Contract Call:',
+    '  address:   0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0\n' +
+      '  function:  execute(uint256 agentId, address target, bytes data)\n' +
+      '  args:             (0, 0x6937a33103C17464d47FF9d37A726b08C354bbBd, 0xb61d27f6000000000000000000000000d078eb70856507eaac7bf8d31c36733e2a386228000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b30000000000000000000000004feb2e0222a3704043fcee6c335ce04e330cec2700000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000)\n' +
+      '  sender:    0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689'
+  ],
+  shortMessage: 'The contract function "execute" reverted with the following reason:\n' +
+    'Execution failed',
+  version: '2.37.9',
+  abi: [
+    {
+      inputs: [Array],
+      name: 'agentIdToWallet',
+      outputs: [Array],
+      stateMutability: 'view',
+      type: 'function'
+    },
+    {
+      inputs: [Array],
+      name: 'execute',
+      outputs: [],
+      stateMutability: 'nonpayable',
+      type: 'function'
+    },
+    { type: 'event', name: 'Deposit', inputs: [Array] }
+  ],
+  args: [
+    0n,
+    '0x6937a33103C17464d47FF9d37A726b08C354bbBd',
+    '0xb61d27f6000000000000000000000000d078eb70856507eaac7bf8d31c36733e2a386228000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b30000000000000000000000004feb2e0222a3704043fcee6c335ce04e330cec2700000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000'
+  ],
+  contractAddress: '0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0',
+  formattedArgs: undefined,
+  functionName: 'execute',
+  sender: '0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689'
+}
+Pool B rate changed to 5%
+Current rates: A: 10%, B: 5%
+Funds deposited to agent 0: 10000000000000000000000 DUSD
+Current rates: A: 10%, B: 5%
+Error in handleRateChange: ContractFunctionExecutionError: The contract function "execute" reverted with the following reason:
+Execution failed
+
+Contract Call:
+  address:   0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0
+  function:  execute(uint256 agentId, address target, bytes data)
+  args:             (0, 0x6937a33103C17464d47FF9d37A726b08C354bbBd, 0xb61d27f6000000000000000000000000d078eb70856507eaac7bf8d31c36733e2a386228000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b30000000000000000000000004feb2e0222a3704043fcee6c335ce04e330cec2700000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000)
+  sender:    0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689
+
+Docs: https://viem.sh/docs/contract/writeContract
+Version: viem@2.37.9
+    at getContractError (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/utils/errors/getContractError.js:30:12)
+    at writeContract (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/actions/wallet/writeContract.js:78:15)
+    ... 2 lines matching cause stack trace ...
+    at async Timeout._onTimeout (file:///home/marvi/Documents/somniaAI/frontend/socket-server.js:285:7) {
+  cause: ContractFunctionRevertedError: The contract function "execute" reverted with the following reason:
+  Execution failed
+  
+  Version: viem@2.37.9
+      at file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/utils/errors/getContractError.js:19:20
+      at getContractError (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/utils/errors/getContractError.js:29:7)
+      at writeContract (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/actions/wallet/writeContract.js:78:15)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async handleRateChange (file:///home/marvi/Documents/somniaAI/frontend/socket-server.js:195:7)
+      at async Timeout._onTimeout (file:///home/marvi/Documents/somniaAI/frontend/socket-server.js:285:7) {
+    details: undefined,
+    docsPath: undefined,
+    metaMessages: undefined,
+    shortMessage: 'The contract function "execute" reverted with the following reason:\n' +
+      'Execution failed',
+    version: '2.37.9',
+    data: { abiItem: [Object], args: [Array], errorName: 'Error' },
+    raw: '0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010457865637574696f6e206661696c656400000000000000000000000000000000',
+    reason: 'Execution failed',
+    signature: undefined
+  },
+  details: undefined,
+  docsPath: '/docs/contract/writeContract',
+  metaMessages: [
+    'Contract Call:',
+    '  address:   0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0\n' +
+      '  function:  execute(uint256 agentId, address target, bytes data)\n' +
+      '  args:             (0, 0x6937a33103C17464d47FF9d37A726b08C354bbBd, 0xb61d27f6000000000000000000000000d078eb70856507eaac7bf8d31c36733e2a386228000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b30000000000000000000000004feb2e0222a3704043fcee6c335ce04e330cec2700000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000)\n' +
+      '  sender:    0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689'
+  ],
+  shortMessage: 'The contract function "execute" reverted with the following reason:\n' +
+    'Execution failed',
+  version: '2.37.9',
+  abi: [
+    {
+      inputs: [Array],
+      name: 'agentIdToWallet',
+      outputs: [Array],
+      stateMutability: 'view',
+      type: 'function'
+    },
+    {
+      inputs: [Array],
+      name: 'execute',
+      outputs: [],
+      stateMutability: 'nonpayable',
+      type: 'function'
+    },
+    { type: 'event', name: 'Deposit', inputs: [Array] }
+  ],
+  args: [
+    0n,
+    '0x6937a33103C17464d47FF9d37A726b08C354bbBd',
+    '0xb61d27f6000000000000000000000000d078eb70856507eaac7bf8d31c36733e2a386228000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b30000000000000000000000004feb2e0222a3704043fcee6c335ce04e330cec2700000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000'
+  ],
+  contractAddress: '0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0',
+  formattedArgs: undefined,
+  functionName: 'execute',
+  sender: '0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689'
+}
+Error in handleRateChange: ContractFunctionExecutionError: The contract function "execute" reverted with the following reason:
+Execution failed
+
+Contract Call:
+  address:   0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0
+  function:  execute(uint256 agentId, address target, bytes data)
+  args:             (0, 0x6937a33103C17464d47FF9d37A726b08C354bbBd, 0xb61d27f6000000000000000000000000d078eb70856507eaac7bf8d31c36733e2a386228000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b30000000000000000000000004feb2e0222a3704043fcee6c335ce04e330cec2700000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000)
+  sender:    0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689
+
+Docs: https://viem.sh/docs/contract/writeContract
+Version: viem@2.37.9
+    at getContractError (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/utils/errors/getContractError.js:30:12)
+    at writeContract (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/actions/wallet/writeContract.js:78:15)
+    ... 2 lines matching cause stack trace ...
+    at async Timeout._onTimeout (file:///home/marvi/Documents/somniaAI/frontend/socket-server.js:277:7) {
+  cause: ContractFunctionRevertedError: The contract function "execute" reverted with the following reason:
+  Execution failed
+  
+  Version: viem@2.37.9
+      at file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/utils/errors/getContractError.js:19:20
+      at getContractError (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/utils/errors/getContractError.js:29:7)
+      at writeContract (file:///home/marvi/Documents/somniaAI/frontend/node_modules/viem/_esm/actions/wallet/writeContract.js:78:15)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async handleRateChange (file:///home/marvi/Documents/somniaAI/frontend/socket-server.js:195:7)
+      at async Timeout._onTimeout (file:///home/marvi/Documents/somniaAI/frontend/socket-server.js:277:7) {
+    details: undefined,
+    docsPath: undefined,
+    metaMessages: undefined,
+    shortMessage: 'The contract function "execute" reverted with the following reason:\n' +
+      'Execution failed',
+    version: '2.37.9',
+    data: { abiItem: [Object], args: [Array], errorName: 'Error' },
+    raw: '0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010457865637574696f6e206661696c656400000000000000000000000000000000',
+    reason: 'Execution failed',
+    signature: undefined
+  },
+  details: undefined,
+  docsPath: '/docs/contract/writeContract',
+  metaMessages: [
+    'Contract Call:',
+    '  address:   0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0\n' +
+      '  function:  execute(uint256 agentId, address target, bytes data)\n' +
+      '  args:             (0, 0x6937a33103C17464d47FF9d37A726b08C354bbBd, 0xb61d27f6000000000000000000000000d078eb70856507eaac7bf8d31c36733e2a386228000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b30000000000000000000000004feb2e0222a3704043fcee6c335ce04e330cec2700000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000)\n' +
+      '  sender:    0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689'
+  ],
+  shortMessage: 'The contract function "execute" reverted with the following reason:\n' +
+    'Execution failed',
+  version: '2.37.9',
+  abi: [
+    {
+      inputs: [Array],
+      name: 'agentIdToWallet',
+      outputs: [Array],
+      stateMutability: 'view',
+      type: 'function'
+    },
+    {
+      inputs: [Array],
+      name: 'execute',
+      outputs: [],
+      stateMutability: 'nonpayable',
+      type: 'function'
+    },
+    { type: 'event', name: 'Deposit', inputs: [Array] }
+  ],
+  args: [
+    0n,
+    '0x6937a33103C17464d47FF9d37A726b08C354bbBd',
+    '0xb61d27f6000000000000000000000000d078eb70856507eaac7bf8d31c36733e2a386228000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b30000000000000000000000004feb2e0222a3704043fcee6c335ce04e330cec2700000000000000000000000000000000000000000000021e19e0c9bab240000000000000000000000000000000000000000000000000000000000000'
+  ],
+  contractAddress: '0x617f62c7077CcBB21DC97A7231EF5123Ad07eEC0',
+  formattedArgs: undefined,
+  functionName: 'execute',
+  sender: '0xcB1c741CdBFBC4062b10Ade5Eb2cD4fced0f9689'
+}
