@@ -120,3 +120,12 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.blinking-cursor {
+  animation: blink 1s step-start 0s infinite;
+}

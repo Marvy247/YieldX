@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+import './AgentDashboardTerminal.css';
+
 // --- Contract ABIs (Simplified for frontend) ---
 const DEMO_USD_ABI = [
   { "inputs": [{ "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "mint", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
@@ -57,6 +59,11 @@ const POOL_B_ADDRESS: Address = '0xA63b9F30a09E475b31fa121e738A49F6869A278E';
 const MINT_AMOUNT = parseEther('1000000'); // 1 Million DemoUSD for testing
 const DEPOSIT_AMOUNT = parseEther('10000'); // 10,000 DemoUSD to deposit into agent
 
+const formatDUSD = (amount: bigint) => {
+  const etherValue = formatEther(amount);
+  return parseFloat(etherValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 export function AgentDashboard() {
   const { address, isConnected, chain } = useAccount();
   const { writeContract } = useWriteContract();
@@ -68,6 +75,7 @@ export function AgentDashboard() {
   const [ownedAgents, setOwnedAgents] = useState<bigint[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<bigint | undefined>(undefined);
   const [logs, setLogs] = useState<string[]>([]);
+  const [typedLog, setTypedLog] = useState<string>('');
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const [poolARate, setPoolARate] = useState<number>(0);
@@ -180,9 +188,21 @@ export function AgentDashboard() {
 
   // Auto-scroll logs to bottom
   useEffect(() => {
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (logs.length === 0) return;
+
+    const lastLog = logs[logs.length - 1];
+    let i = 0;
+    setTypedLog('');
+    const typingInterval = setInterval(() => {
+      if (i < lastLog.length) {
+        setTypedLog(prev => prev + lastLog.charAt(i));
+        i++;
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, 50);
+
+    return () => clearInterval(typingInterval);
   }, [logs]);
 
   // --- Read Contract Data ---
@@ -469,7 +489,7 @@ if (agentBalanceNumber > 0) {
             </CardHeader>
             <CardContent>
               <p className="mb-2 text-sm">Address: <span className="font-mono">{address?.slice(0,6)}...{address?.slice(-4)}</span></p>
-              <p className="mb-4 text-lg font-semibold">DemoUSD Balance: {demoUsdBalance !== undefined ? formatEther(demoUsdBalance) : 'Loading...'} DUSD</p>
+              <p className="mb-4 text-lg font-semibold">DemoUSD Balance: {demoUsdBalance !== undefined ? formatDUSD(demoUsdBalance) : 'Loading...'} DUSD</p>
               <div className="flex space-x-2">
                 <Button onClick={handleMintDemoUSD} className="bg-green-600 hover:bg-green-700">
                   <Zap className="h-4 w-4 mr-1" />
@@ -524,12 +544,12 @@ if (agentBalanceNumber > 0) {
                     <p className="text-sm"><strong>Agent ID:</strong> <span className="font-mono">{selectedAgentId.toString()}</span></p>
                     <p className="text-sm"><strong>Agent Wallet:</strong> {agentWalletLoadingState ? 'Loading...' : (agentWalletAddressState && agentWalletAddressState !== '0x0000000000000000000000000000000000000000') ? <span className="font-mono">{agentWalletAddressState.slice(0,6)}...{agentWalletAddressState.slice(-4)}</span> : 'Not available'}</p>
                     <p className="text-sm"><strong>Operator:</strong> {operatorLoadingState ? 'Loading...' : (operatorAddressState && operatorAddressState !== '0x0000000000000000000000000000000000000000') ? <span className="font-mono">{operatorAddressState.slice(0,6)}...{operatorAddressState.slice(-4)}</span> : 'Not available'}</p>
-                    <p className="text-sm"><strong>Funds in Pool A:</strong> {agentWalletAddressState ? (agentPoolABalance !== undefined ? formatEther(agentPoolABalance) : 'Loading...') : 'No agent selected'} DUSD</p>
-                    <p className="text-sm"><strong>Funds in Pool B:</strong> {agentWalletAddressState ? (agentPoolBBalance !== undefined ? formatEther(agentPoolBBalance) : 'Loading...') : 'No agent selected'} DUSD</p>
+                    <p className="text-sm"><strong>Funds in Pool A:</strong> {agentWalletAddressState ? (agentPoolABalance !== undefined ? formatDUSD(agentPoolABalance) : 'Loading...') : 'No agent selected'} DUSD</p>
+                    <p className="text-sm"><strong>Funds in Pool B:</strong> {agentWalletAddressState ? (agentPoolBBalance !== undefined ? formatDUSD(agentPoolBBalance) : 'Loading...') : 'No agent selected'} DUSD</p>
                   </div>
                   <Button onClick={handleDepositToAgent} className="w-full bg-blue-600 hover:bg-blue-700">
                     <TrendingUp className="h-4 w-4 mr-1" />
-                    Deposit {formatEther(DEPOSIT_AMOUNT)} DUSD to Agent
+                    Deposit {formatDUSD(DEPOSIT_AMOUNT)} DUSD to Agent
                   </Button>
                   <p className="mt-4 text-xs text-muted-foreground">*Agent will automatically move funds based on yield.</p>
                 </>
@@ -576,7 +596,7 @@ if (agentBalanceNumber > 0) {
           </Card>
 
           {/* Live Agent Log Section */}
-          <Card className="lg:col-span-1 bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-900/20 dark:to-slate-900/20 border-gray-200 dark:border-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <Card className="col-span-full bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-900/20 dark:to-slate-900/20 border-gray-200 dark:border-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Terminal className="h-5 w-5 text-gray-600" />
@@ -585,11 +605,21 @@ if (agentBalanceNumber > 0) {
               <CardDescription>Real-time logs from the autonomous agent.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64 overflow-y-auto bg-black text-green-400 p-4 rounded-md border font-mono text-sm">
-                {logs.map((log, index) => (
-                  <div key={index} className="mb-1">{log}</div>
-                ))}
-                <div ref={logsEndRef} />
+              <div className="terminal-container">
+                <div className="terminal-header">
+                  <div className="terminal-buttons">
+                    <span className="terminal-btn close"></span>
+                    <span className="terminal-btn minimize"></span>
+                    <span className="terminal-btn maximize"></span>
+                  </div>
+                  <div className="terminal-title">Live Agent Log</div>
+                </div>
+                <div className="terminal-content text-sm md:text-base" ref={logsEndRef}>
+                  {logs.map((log, index) => (
+                    <div key={index} className="terminal-line">{log}</div>
+                  ))}
+                  <div className="terminal-cursor">█</div>
+                </div>
               </div>
             </CardContent>
           </Card>

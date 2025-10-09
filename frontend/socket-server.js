@@ -1,5 +1,5 @@
 import { WebSocketServer } from 'ws';
-import { createPublicClient, createWalletClient, http, encodeFunctionData } from 'viem';
+import { createPublicClient, createWalletClient, http, encodeFunctionData, formatEther } from 'viem';
 import { watchContractEvent } from 'viem/actions';
 import { privateKeyToAccount } from 'viem/accounts';
 
@@ -73,6 +73,11 @@ function broadcast(message) {
     }
   });
 }
+
+const formatDUSD = (amount) => {
+  const etherValue = formatEther(amount);
+  return parseFloat(etherValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
 const rateChangeQueue = [];
 let isProcessingQueue = false;
@@ -151,8 +156,8 @@ async function handleRateChange() {
       args: [wallet],
     });
 
-    broadcast(`Agent wallet balance: ${walletBalance} DUSD, Pool A: ${balanceA} DUSD, Pool B: ${balanceB} DUSD`);
-    broadcast(`Agent balance in Pool A: ${agentBalanceA} DUSD, Agent balance in Pool B: ${agentBalanceB} DUSD`);
+    broadcast(`Agent wallet balance: ${formatDUSD(walletBalance)} DUSD, Pool A: ${formatDUSD(balanceA)} DUSD, Pool B: ${formatDUSD(balanceB)} DUSD`);
+    broadcast(`Agent balance in Pool A: ${formatDUSD(agentBalanceA)} DUSD, Agent balance in Pool B: ${formatDUSD(agentBalanceB)} DUSD`);
 
     // Decide which pool to move to
     let targetPool, amount;
@@ -184,7 +189,7 @@ async function handleRateChange() {
           args: [agentId, DEMO_USD_ADDRESS, approveData],
         });
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
-        broadcast(`Approved ${walletBalance} DUSD for Pool ${poolName}`);
+        broadcast(`Approved ${formatDUSD(walletBalance)} DUSD for Pool ${poolName}`);
 
         const depositData = encodeFunctionData({
           abi: YIELD_POOL_ABI,
@@ -198,7 +203,7 @@ async function handleRateChange() {
           args: [agentId, targetPool, depositData],
         });
         await publicClient.waitForTransactionReceipt({ hash: depositHash });
-        broadcast(`Deposited ${walletBalance} DUSD to Pool ${poolName}`);
+        broadcast(`Deposited ${formatDUSD(walletBalance)} DUSD to Pool ${poolName}`);
       } catch (error) {
         broadcast(`Failed to deposit wallet balance: ${error.message}`);
       }
@@ -219,7 +224,7 @@ async function handleRateChange() {
             args: [agentId, POOL_A_ADDRESS, withdrawData],
           });
           await publicClient.waitForTransactionReceipt({ hash: withdrawHash });
-          broadcast(`Withdrew ${agentBalanceA} DUSD from Pool A`);
+          broadcast(`Withdrew ${formatDUSD(agentBalanceA)} DUSD from Pool A`);
 
           // Approve target pool to spend the withdrawn funds
           const approveData = encodeFunctionData({
@@ -234,7 +239,7 @@ async function handleRateChange() {
             args: [agentId, DEMO_USD_ADDRESS, approveData],
           });
           await publicClient.waitForTransactionReceipt({ hash: approveHash });
-          broadcast(`Approved ${agentBalanceA} DUSD for Pool ${poolName}`);
+          broadcast(`Approved ${formatDUSD(agentBalanceA)} DUSD for Pool ${poolName}`);
 
           // Deposit to target pool
           const depositData = encodeFunctionData({
@@ -249,7 +254,7 @@ async function handleRateChange() {
             args: [agentId, targetPool, depositData],
           });
           await publicClient.waitForTransactionReceipt({ hash: depositHash });
-          broadcast(`Deposited ${agentBalanceA} DUSD to Pool ${poolName}`);
+          broadcast(`Deposited ${formatDUSD(agentBalanceA)} DUSD to Pool ${poolName}`);
         }
 
       if (agentBalanceB > 0n && targetPool !== POOL_B_ADDRESS) {
@@ -265,7 +270,7 @@ async function handleRateChange() {
           args: [agentId, POOL_B_ADDRESS, withdrawData],
         });
         await publicClient.waitForTransactionReceipt({ hash: withdrawHash });
-        broadcast(`Withdrew ${agentBalanceB} DUSD from Pool B`);
+        broadcast(`Withdrew ${formatDUSD(agentBalanceB)} DUSD from Pool B`);
 
         // Approve target pool to spend the withdrawn funds
         const approveData = encodeFunctionData({
@@ -280,7 +285,7 @@ async function handleRateChange() {
           args: [agentId, DEMO_USD_ADDRESS, approveData],
         });
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
-        broadcast(`Approved ${agentBalanceB} DUSD for Pool ${poolName}`);
+        broadcast(`Approved ${formatDUSD(agentBalanceB)} DUSD for Pool ${poolName}`);
 
         // Deposit to target pool
         const depositData = encodeFunctionData({
@@ -295,7 +300,7 @@ async function handleRateChange() {
           args: [agentId, targetPool, depositData],
         });
         await publicClient.waitForTransactionReceipt({ hash: depositHash });
-        broadcast(`Deposited ${agentBalanceB} DUSD to Pool ${poolName}`);
+        broadcast(`Deposited ${formatDUSD(agentBalanceB)} DUSD to Pool ${poolName}`);
       }
     } catch (error) {
       broadcast(`Agent action failed: ${error.message}`);
@@ -361,7 +366,7 @@ setInterval(async () => {
     }
 
     if (balance > previousBalance) {
-      const message = `Funds deposited to agent 0: ${balance - previousBalance} DUSD`;
+      const message = `Funds deposited to agent 0: ${formatDUSD(balance - previousBalance)} DUSD`;
       console.log(message);
       broadcast(message);
       previousBalance = balance;
