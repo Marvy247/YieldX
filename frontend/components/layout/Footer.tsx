@@ -8,7 +8,7 @@ export function Footer() {
     <footer className="border-t">
       <div className="container flex h-14 items-center justify-between mx-auto">
         <p className="text-sm text-muted-foreground">
-          &copy; 2025 YieldX. All rights reserved.
+          &copy; 2025 YieldPay. All rights reserved.
         </p>
         <div className="flex items-center space-x-4">
           <Link href="#" prefetch={false} className="text-muted-foreground hover:text-foreground">

@@ -28,7 +28,7 @@ const somniaTestnet = defineChain({
 });
 
 const config = getDefaultConfig({
-  appName: 'YieldX',
+  appName: 'YieldPay',
   projectId: 'YOUR_PROJECT_ID', // Replace with actual project ID
   chains: [somniaTestnet],
   ssr: true, // If your dApp uses server side rendering (SSR)

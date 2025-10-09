@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "YieldX - Autonomous Yield Agent",
+  title: "YieldPay - Autonomous Yield Agent",
   description: "An autonomous on-chain agent for yield farming in the Somnia ecosystem.",
 };
 

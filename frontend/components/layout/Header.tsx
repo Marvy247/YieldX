@@ -14,7 +14,7 @@ export function Header() {
         <Link href="#" className="flex items-center ml-3 hover:opacity-80 transition-opacity duration-200">
           <Mountain className="h-7 w-7 text-primary" />
           <span className="font-extrabold text-lg bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            YieldX
+            YieldPay
           </span>
         </Link>
 
@@ -37,7 +37,7 @@ export function Header() {
                 <div className="flex flex-col space-y-4 p-4">
                     <Link href="#" className="flex items-center space-x-2">
                         <Mountain className="h-6 w-6" />
-                        <span className="font-bold">YieldX</span>
+                        <span className="font-bold">YieldPay</span>
                     </Link>
                     <nav className="flex flex-col space-y-2 text-lg font-medium">
                         <Link href="#">Dashboard</Link>

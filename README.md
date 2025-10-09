@@ -1,4 +1,4 @@
-# YieldX
+# YieldPay
 
 > An autonomous on-chain agent for intelligent yield farming in the Somnia ecosystem.
 
