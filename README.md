@@ -1,7 +1,7 @@
 # YieldPay
 > An autonomous on-chain agent for intelligent yield farming in the Somnia ecosystem.
 
-This project is a proof-of-concept for an autonomous yield agent built for the Somnia AI Hackathon. It demonstrates how an off-chain AI/bot can manage on-chain assets, automatically moving funds between different yield pools to maximize returns for the user.
+This project is an autonomous yield agent built for the Somnia AI Hackathon. It demonstrates how an off-chain AI/bot can manage on-chain assets, automatically moving funds between different yield pools to maximize returns for the user.
 
 ## Table of Contents
 
