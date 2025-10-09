@@ -205,6 +205,13 @@ export function AgentDashboard() {
     return () => clearInterval(typingInterval);
   }, [logs]);
 
+  // Scroll to bottom when logs change
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs]);
+
   // --- Read Contract Data ---
   const { data: demoUsdBalance } = useReadContract({
     address: DEMO_USD_ADDRESS,
@@ -362,7 +369,10 @@ if (agentBalanceNumber > 0) {
           functionName: 'deposit',
           args: [selectedAgentId, DEPOSIT_AMOUNT],
         }, {
-          onSuccess: (hash) => toast.success(`Depositing to agent... Tx: ${hash}`),
+          onSuccess: (hash) => {
+            toast.success(`Depositing to agent... Tx: ${hash}`);
+            setSelectedAgentId(undefined); // Clear selected agent input after deposit
+          },
           onError: (error) => toast.error(`Deposit failed: ${error.message}`),
         });
       },
@@ -379,6 +389,12 @@ if (agentBalanceNumber > 0) {
         abi: YIELD_POOL_ABI,
         functionName: 'setRewardRateByAgentOwner',
         args: [selectedAgentId!, BigInt(adminPoolARate)],
+      }, {
+        onSuccess: (hash) => {
+          toast.success(`Setting Pool A rate to ${adminPoolARate}... Tx: ${hash}`);
+          setAdminPoolARate('0'); // Clear input after successful rate setting
+        },
+        onError: (error) => toast.error(`Failed to set Pool A rate: ${error.message}`),
       });
     } else {
       writeContract({
@@ -386,9 +402,14 @@ if (agentBalanceNumber > 0) {
         abi: YIELD_POOL_ABI,
         functionName: 'setRewardRate',
         args: [BigInt(adminPoolARate)],
+      }, {
+        onSuccess: (hash) => {
+          toast.success(`Setting Pool A rate to ${adminPoolARate}... Tx: ${hash}`);
+          setAdminPoolARate('0'); // Clear input after successful rate setting
+        },
+        onError: (error) => toast.error(`Failed to set Pool A rate: ${error.message}`),
       });
     }
-    toast.success(`Setting Pool A rate to ${adminPoolARate}...`);
   };
 
   const handleSetPoolBRate = () => {
@@ -400,6 +421,12 @@ if (agentBalanceNumber > 0) {
         abi: YIELD_POOL_ABI,
         functionName: 'setRewardRateByAgentOwner',
         args: [selectedAgentId!, BigInt(adminPoolBRate)],
+      }, {
+        onSuccess: (hash) => {
+          toast.success(`Setting Pool B rate to ${adminPoolBRate}... Tx: ${hash}`);
+          setAdminPoolBRate('0'); // Clear input after successful rate setting
+        },
+        onError: (error) => toast.error(`Failed to set Pool B rate: ${error.message}`),
       });
     } else {
       writeContract({
@@ -407,9 +434,14 @@ if (agentBalanceNumber > 0) {
         abi: YIELD_POOL_ABI,
         functionName: 'setRewardRate',
         args: [BigInt(adminPoolBRate)],
+      }, {
+        onSuccess: (hash) => {
+          toast.success(`Setting Pool B rate to ${adminPoolBRate}... Tx: ${hash}`);
+          setAdminPoolBRate('0'); // Clear input after successful rate setting
+        },
+        onError: (error) => toast.error(`Failed to set Pool B rate: ${error.message}`),
       });
     }
-    toast.success(`Setting Pool B rate to ${adminPoolBRate}...`);
   };
 
   const handleAddFundsToPool = () => {
@@ -437,7 +469,10 @@ if (agentBalanceNumber > 0) {
           functionName: 'deposit',
           args: [amount],
         }, {
-          onSuccess: (hash) => toast.success(`Depositing to pool... Tx: ${hash}`),
+          onSuccess: (hash) => {
+            toast.success(`Depositing to pool... Tx: ${hash}`);
+            setDepositAmount(''); // Clear input after successful deposit
+          },
           onError: (error) => toast.error(`Deposit failed: ${error.message}`),
         });
       },
